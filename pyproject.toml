@@ -1,0 +1,13 @@
+[project]
+name = "full-stack-imdb"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["ipykernel", "pandas"]
+
+[tool.uv.workspace]
+members = [
+    "backend",
+    "frontend",
+]
