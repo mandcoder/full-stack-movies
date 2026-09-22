@@ -1,91 +1,274 @@
 # Full-Stack Movies
 
-A Python portfolio project connecting movie data preparation with a REST API, an interactive web framework, and cloud infrastructure configuration.
+A full-stack data application for exploring and analyzing movie data.
 
-I built this project to bring data engineering and application development together: preparing movie records with pandas, serving the resulting dataset through FastAPI, and displaying it in a Streamlit dashboard. Separate Docker images and Terraform configurations extend the project to container orchestration and Azure infrastructure as code.
+The project combines data preparation, exploratory data analysis, a Python backend API, an interactive frontend dashboard, containerization with Docker, and infrastructure as code with Terraform.
 
-## Project overview
+The goal of the project is to demonstrate how a dataset can move from raw source data through processing and API exposure to an interactive application, while also incorporating deployment-oriented technologies.
 
-The application presents movie titles, genres, release dates, and IMDb ratings in a table. Behind the interface, a file-based data workflow transforms raw records into a consistent dataset consumed by the API.
+## Project Overview
 
-```mermaid
-flowchart LR
-    A[Raw movie records] --> B[pandas data preparation]
-    B --> C[Processed CSV]
-    C --> D[FastAPI backend]
-    D --> E[Streamlit dashboard]
+The application is structured into separate backend, frontend, data, and infrastructure components.
+
+The project includes:
+
+- Data preparation and transformation with Python and Pandas
+- Exploratory data analysis using Jupyter
+- Backend API built with FastAPI
+- Interactive dashboard built with Streamlit
+- Separate backend and frontend Python packages
+- Dockerized backend and frontend services
+- Docker Compose for service orchestration
+- Terraform infrastructure for Azure resources
+- Azure Container Registry configuration
+- Dependency and workspace management with `uv`
+
+## Architecture
+
+The project follows a modular full-stack architecture:
+
+```text
+Raw movie data
+      │
+      ▼
+Data preparation / processing
+      │
+      ▼
+Processed movie data
+      │
+      ▼
+FastAPI backend
+      │
+      ▼
+Streamlit frontend
+      │
+      ▼
+Interactive movie dashboard
 ```
 
-## Data engineering
+Containerization and infrastructure are handled separately:
 
-The data preparation code handles raw records stored as one Python dictionary literal per line. It parses these records with `ast.literal_eval` and builds a pandas DataFrame for transformation.
+```text
+Application
+    │
+    ├── Backend container
+    │
+    └── Frontend container
+            │
+            ▼
+       Docker Compose
 
-The workflow:
+Infrastructure
+    │
+    ▼
+ Terraform
+    │
+    ▼
+Azure resources
+```
 
-- Selects movie identifiers, titles, genres, release dates, and ratings.
-- Standardizes column names to `imdb_id`, `primary_title`, `genres`, `release_date`, and `imdb_rating`.
-- Removes records with missing ratings or release dates.
-- Exports the prepared dataset to CSV for the backend.
-- Restores serialized genre values to Python lists when loading the CSV for API responses.
+## Project Structure
 
-This creates a clear boundary between data preparation and the application that consumes the results.
+```text
+.
+├── README.md
+├── backend
+│   ├── README.md
+│   ├── data
+│   │   ├── processed
+│   │   │   └── imdb_movies.csv
+│   │   └── raw
+│   │       └── imdb_movies.json
+│   ├── pyproject.toml
+│   └── src
+│       └── backend
+│           ├── __init__.py
+│           ├── api.py
+│           ├── constants.py
+│           ├── data_prep.py
+│           └── data_processing.py
+│
+├── docker-compose.yaml
+│
+├── dockerfiles
+│   ├── backend.dockerfile
+│   └── frontend.dockerfile
+│
+├── eda_imdb.ipynb
+│
+├── frontend
+│   ├── README.md
+│   ├── assets
+│   │   └── action_movies.png
+│   ├── pyproject.toml
+│   └── src
+│       └── frontend
+│           ├── __init__.py
+│           ├── dashboard.py
+│           └── image_path_helper.py
+│
+├── infra
+│   ├── apps
+│   │   ├── main.tf
+│   │   ├── providers.tf
+│   │   └── variables.tf
+│   │
+│   └── registry
+│       ├── acr.tf
+│       ├── providers.tf
+│       ├── resources-group.tf
+│       └── variables.tf
+│
+├── pyproject.toml
+└── uv.lock
+```
 
-### Exploratory analysis
+> Local datasets, Terraform state files, virtual environments, Python cache files, and other generated files are excluded from version control through `.gitignore`.
 
-The [EDA notebook](eda_imdb.ipynb) explores missing values, input parsing, and nested cast records. It uses `pd.json_normalize` to flatten cast data, selects actors and actresses, and joins those records to movie information.
+## Backend
 
-This exploration produces a separate movie-and-actor export. The dashboard uses the smaller, five-column dataset produced by the backend preparation script.
+The backend is responsible for preparing, processing, and exposing the movie data.
 
-## Backend and frontend
+The backend source code is organized into several modules:
 
-The **FastAPI backend** loads the processed dataset into memory and exposes it through `GET /imdb_action_movies`. The endpoint returns JSON records and supports a row limit, with 30 records returned by default.
+- `api.py` – backend API
+- `data_prep.py` – data preparation
+- `data_processing.py` – movie data processing
+- `constants.py` – shared backend constants
 
-The **Streamlit frontend** retrieves these records with HTTPX and displays them in a table, alongside a movie banner and data-source attribution. An environment variable configures the backend address for local containers and the Azure application configuration.
+The backend is maintained as its own Python package with a dedicated `pyproject.toml`.
 
-The view is titled “Action movies”; genre selection is determined by the supplied dataset, as the application does not apply a genre filter.
+## Frontend
 
-## Containers and cloud infrastructure
+The frontend provides the interactive user interface for exploring the movie data.
 
-The project includes separate **Dockerfiles** for the backend and frontend, both based on Python 3.13. **Docker Compose** connects the services and uses a backend health check to control frontend startup. The processed dataset is packaged with the backend image.
+The main dashboard is implemented in:
 
-The **Terraform configuration** is split into registry and application resources:
+```text
+frontend/src/frontend/dashboard.py
+```
 
-| Area | Infrastructure defined in code |
-| --- | --- |
-| Registry | Azure resource group and Basic-tier Azure Container Registry |
-| Application hosting | Azure Container Apps environment and separate backend and frontend apps |
-| Image access | User-assigned managed identity with a registry-scoped `AcrPull` role |
-| Service connection | Frontend backend URL configured from the backend's HTTPS ingress address |
+Supporting frontend functionality is separated into helper modules and assets.
 
-These configurations demonstrate the intended Azure deployment architecture. A Log Analytics workspace is also declared, although it is not connected to the Container Apps environment in the current code.
+The frontend is maintained as a separate Python package with its own `pyproject.toml`.
 
-## Technology stack
+## Data Pipeline
 
-| Area | Tools |
-| --- | --- |
+The project separates raw and processed data:
+
+```text
+backend/data/raw/
+        │
+        ▼
+Data preparation
+        │
+        ▼
+Data processing
+        │
+        ▼
+backend/data/processed/
+```
+
+This separation keeps source data independent from application-ready datasets and makes the transformation flow easier to maintain and understand.
+
+## Exploratory Data Analysis
+
+Exploratory analysis is performed in:
+
+```text
+eda_imdb.ipynb
+```
+
+The notebook is used to inspect and understand the movie dataset before the data is prepared for use by the application.
+
+## Docker
+
+The backend and frontend are containerized independently:
+
+```text
+dockerfiles/
+├── backend.dockerfile
+└── frontend.dockerfile
+```
+
+`docker-compose.yaml` defines the application services and provides a common configuration for the containerized backend and frontend.
+
+This separation allows the two application components to be built and managed independently.
+
+## Infrastructure as Code
+
+Infrastructure configuration is maintained under:
+
+```text
+infra/
+├── apps/
+└── registry/
+```
+
+Terraform is used to describe the Azure infrastructure required by the project.
+
+The infrastructure is separated into application and container registry configurations.
+
+### Registry Infrastructure
+
+The `registry` configuration contains resources related to the Azure Container Registry and its supporting Azure resources.
+
+### Application Infrastructure
+
+The `apps` configuration contains the Terraform configuration for the application infrastructure.
+
+Keeping infrastructure separate from application code makes the deployment architecture explicit and version controlled.
+
+## Technology Stack
+
+| Area | Technology |
+|---|---|
 | Language | Python |
-| Data preparation and analysis | pandas, Jupyter |
-| API | FastAPI, Uvicorn |
-| Frontend | Streamlit, HTTPX |
-| Dependency management | uv workspace and lockfile |
-| Containers | Docker, Docker Compose |
-| Infrastructure | Terraform, Azure Container Registry, Azure Container Apps |
+| Data Processing | Pandas |
+| Data Analysis | Jupyter |
+| Backend | FastAPI |
+| Frontend | Streamlit |
+| Containers | Docker |
+| Service Orchestration | Docker Compose |
+| Infrastructure as Code | Terraform |
+| Cloud | Microsoft Azure |
+| Container Registry | Azure Container Registry |
+| Dependency Management | uv |
+| Version Control | Git / GitHub |
 
-## Code highlights
+## Repository Design
 
-| Component | Source |
-| --- | --- |
-| Data cleaning and CSV export | [data_prep.py](backend/src/backend/data_prep.py) |
-| Dataset loading and genre parsing | [data_processing.py](backend/src/backend/data_processing.py) |
-| REST endpoint | [api.py](backend/src/backend/api.py) |
-| Dashboard | [dashboard.py](frontend/src/frontend/dashboard.py) |
-| Exploratory analysis and cast normalization | [eda_imdb.ipynb](eda_imdb.ipynb) |
-| Service orchestration | [docker-compose.yaml](docker-compose.yaml) |
-| Container images | [dockerfiles](dockerfiles) |
-| Azure infrastructure | [infra](infra) |
+The repository is organized as a small monorepo.
 
-## Project scope
+The root `pyproject.toml` defines a `uv` workspace containing:
 
-This is a personal portfolio project with manual data preparation, CSV storage, a read-only API, and a tabular frontend. The infrastructure is represented by Terraform configuration; a live deployment is not documented here. Data files are excluded from the repository.
+```text
+backend
+frontend
+```
 
-Movie data is attributed in the application to IMDb via RapidAPI. This project is not affiliated with or endorsed by IMDb.
+Each application component also has its own `pyproject.toml`, allowing backend and frontend dependencies to remain separated while still being managed from the same repository.
+
+This structure keeps clear boundaries between:
+
+- data processing
+- backend services
+- frontend presentation
+- container configuration
+- cloud infrastructure
+
+## What This Project Demonstrates
+
+This project demonstrates several areas involved in building a data-driven application:
+
+- Structuring a Python project into independent application components
+- Preparing raw data for application use
+- Performing exploratory data analysis
+- Building an API layer around processed data
+- Creating an interactive data dashboard
+- Containerizing multiple application services
+- Managing application services with Docker Compose
+- Defining cloud infrastructure with Terraform
+- Organizing Azure infrastructure separately from application code
+- Managing a multi-package Python repository with `uv`
+- Using Git and GitHub for version control
