@@ -14,7 +14,7 @@ resolution-markers = [
 members = [
     "backend",
     "frontend",
-    "full-stack-imdb",
+    "full-stack-movies",
 ]
 
 [[package]]
@@ -394,7 +394,7 @@ requires-dist = [
 ]
 
 [[package]]
-name = "full-stack-imdb"
+name = "full-stack-movies"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
