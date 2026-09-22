@@ -4,11 +4,11 @@ A full-stack data application for exploring and analyzing movie data.
 
 The project combines data preparation, exploratory data analysis, a Python backend API, an interactive frontend dashboard, containerization with Docker, and infrastructure as code with Terraform.
 
-The goal of the project is to demonstrate how a dataset can move from raw source data through processing and API exposure to an interactive application, while also incorporating deployment-oriented technologies.
+The goal of the project is to demonstrate how raw movie data can move through processing and API exposure to an interactive application, while also incorporating deployment-oriented technologies and cloud infrastructure.
 
 ## Project Overview
 
-The application is structured into separate backend, frontend, data, and infrastructure components.
+The application is structured into separate backend, frontend, data, container, and infrastructure components.
 
 The project includes:
 
@@ -25,13 +25,16 @@ The project includes:
 
 ## Architecture
 
-The project follows a modular full-stack architecture:
+The application follows a modular full-stack architecture:
 
 ```text
 Raw movie data
       │
       ▼
-Data preparation / processing
+Data preparation
+      │
+      ▼
+Data processing
       │
       ▼
 Processed movie data
@@ -76,9 +79,7 @@ Azure resources
 │   ├── README.md
 │   ├── data
 │   │   ├── processed
-│   │   │   └── imdb_movies.csv
 │   │   └── raw
-│   │       └── imdb_movies.json
 │   ├── pyproject.toml
 │   └── src
 │       └── backend
@@ -123,7 +124,7 @@ Azure resources
 └── uv.lock
 ```
 
-> Local datasets, Terraform state files, virtual environments, Python cache files, and other generated files are excluded from version control through `.gitignore`.
+> **Note:** Raw and processed datasets are stored locally under `backend/data/` and are excluded from version control. Terraform state files, virtual environments, generated Python cache files, and other local artifacts are also excluded through `.gitignore`.
 
 ## Backend
 
@@ -131,10 +132,10 @@ The backend is responsible for preparing, processing, and exposing the movie dat
 
 The backend source code is organized into several modules:
 
-- `api.py` – backend API
-- `data_prep.py` – data preparation
-- `data_processing.py` – movie data processing
-- `constants.py` – shared backend constants
+- `api.py` – defines the backend API
+- `data_prep.py` – handles data preparation
+- `data_processing.py` – handles movie data processing
+- `constants.py` – contains shared backend constants
 
 The backend is maintained as its own Python package with a dedicated `pyproject.toml`.
 
@@ -154,7 +155,7 @@ The frontend is maintained as a separate Python package with its own `pyproject.
 
 ## Data Pipeline
 
-The project separates raw and processed data:
+The project separates raw source data from processed application-ready data.
 
 ```text
 backend/data/raw/
@@ -169,7 +170,9 @@ Data processing
 backend/data/processed/
 ```
 
-This separation keeps source data independent from application-ready datasets and makes the transformation flow easier to maintain and understand.
+This structure creates a clear separation between the original dataset and the transformed data consumed by the application.
+
+The dataset itself is kept outside version control, while the code responsible for processing it remains part of the repository.
 
 ## Exploratory Data Analysis
 
@@ -179,7 +182,9 @@ Exploratory analysis is performed in:
 eda_imdb.ipynb
 ```
 
-The notebook is used to inspect and understand the movie dataset before the data is prepared for use by the application.
+The notebook is used to explore and understand the movie dataset before it is prepared and processed for use by the application.
+
+Keeping exploratory analysis separate from production application code helps maintain a clear distinction between data investigation and application logic.
 
 ## Docker
 
@@ -205,19 +210,36 @@ infra/
 └── registry/
 ```
 
-Terraform is used to describe the Azure infrastructure required by the project.
+Terraform is used to define the Azure infrastructure associated with the project.
 
 The infrastructure is separated into application and container registry configurations.
 
 ### Registry Infrastructure
 
-The `registry` configuration contains resources related to the Azure Container Registry and its supporting Azure resources.
+The `registry` directory contains Terraform configuration related to the Azure Container Registry and supporting Azure resources.
 
 ### Application Infrastructure
 
-The `apps` configuration contains the Terraform configuration for the application infrastructure.
+The `apps` directory contains the Terraform configuration for the application infrastructure.
 
-Keeping infrastructure separate from application code makes the deployment architecture explicit and version controlled.
+Separating infrastructure from application code keeps the cloud architecture explicit, reproducible, and version controlled.
+
+Terraform state files are intentionally excluded from the repository because they represent environment-specific infrastructure state rather than source code.
+
+## Python Workspace
+
+The repository is organized as a small monorepo.
+
+The root `pyproject.toml` defines a `uv` workspace containing:
+
+```text
+backend
+frontend
+```
+
+Each component also has its own `pyproject.toml`.
+
+This allows the backend and frontend to maintain their own package configuration while still being managed as part of the same project.
 
 ## Technology Stack
 
@@ -238,37 +260,38 @@ Keeping infrastructure separate from application code makes the deployment archi
 
 ## Repository Design
 
-The repository is organized as a small monorepo.
-
-The root `pyproject.toml` defines a `uv` workspace containing:
+The repository separates the main responsibilities of the application:
 
 ```text
-backend
-frontend
+Data           → raw and processed movie data
+Backend        → processing and API layer
+Frontend       → interactive dashboard
+Docker         → application containerization
+Infrastructure → Azure resources defined with Terraform
 ```
-
-Each application component also has its own `pyproject.toml`, allowing backend and frontend dependencies to remain separated while still being managed from the same repository.
 
 This structure keeps clear boundaries between:
 
-- data processing
-- backend services
-- frontend presentation
-- container configuration
-- cloud infrastructure
+- Data preparation and processing
+- Backend services
+- Frontend presentation
+- Container configuration
+- Cloud infrastructure
 
 ## What This Project Demonstrates
 
-This project demonstrates several areas involved in building a data-driven application:
+This project demonstrates several areas involved in building a data-driven full-stack application:
 
 - Structuring a Python project into independent application components
-- Preparing raw data for application use
+- Separating raw and processed data
+- Preparing movie data for application use
 - Performing exploratory data analysis
 - Building an API layer around processed data
 - Creating an interactive data dashboard
-- Containerizing multiple application services
-- Managing application services with Docker Compose
+- Containerizing backend and frontend services
+- Managing multiple services with Docker Compose
 - Defining cloud infrastructure with Terraform
-- Organizing Azure infrastructure separately from application code
+- Working with Azure Container Registry
+- Separating infrastructure from application code
 - Managing a multi-package Python repository with `uv`
 - Using Git and GitHub for version control
